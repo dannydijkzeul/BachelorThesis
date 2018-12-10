@@ -118,7 +118,7 @@ class Trainer(object):
         loss = F.binary_cross_entropy(preds, 1 - y)
         loss = self.params.dis_lambda * loss
 
-        stats['GEN_LOSS'].append(loss.data[0])
+        stats['GEN_LOSS'].append(loss.item())
 
         # check NaN
         if (loss != loss).data.any():
