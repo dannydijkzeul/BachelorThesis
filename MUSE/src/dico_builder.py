@@ -38,7 +38,7 @@ def get_candidates(emb1, emb2, params):
             scores = emb2.mm(emb1[i:min(n_src, i + bs)].transpose(0, 1)).transpose(0, 1)
             best_scores, best_targets = scores.topk(2, dim=1, largest=True, sorted=True)
 
-            print best_targets
+            # print best_targets
 
             # update scores / potential targets
             all_scores.append(best_scores.cpu())
