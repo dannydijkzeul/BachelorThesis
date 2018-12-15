@@ -96,6 +96,8 @@ assert params.export in ["", "txt", "pth"]
 # build model / trainer / evaluator
 logger = initialize_exp(params)
 src_emb, tgt_emb, mapping, discriminator = build_model(params, True)
+
+print params.src_dico.index(",")
 trainer = Trainer(src_emb, tgt_emb, mapping, discriminator, params)
 evaluator = Evaluator(trainer)
 
@@ -141,13 +143,18 @@ if params.adversarial:
                 for k, _ in stats_str2:
                     if len(stats[k]) > 0:
                         writer.add_scalar('Thesis_' + params.exp_id + '/Generator_loss', np.mean(stats[k])/params.dis_lambda, n_iter + (n_epoch*params.epoch_size))
-
-
+                evaluator.new_translation(to_log2)
+                writer.add_scalar('Thesis_' + params.exp_id + '/Mean_word_scores', to_log2['Word_Scores'] , n_iter + (n_epoch*params.epoch_size))
+                for i in to_log2["Words"]:
+                    writer.add_text('Thesis_' + params.exp_id + '/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
 
             # log stats
             if n_iter % 500 == 0:
                 stats_str = [('DIS_COSTS', 'Discriminator loss')]
                 stats_str2 = [('GEN_LOSS', 'Generator loss')]
+
+                # add togheter
+
                 stats_log = ['%s: %.4f' % (v, np.mean(stats[k]))
                              for k, v in stats_str if len(stats[k]) > 0]
 
