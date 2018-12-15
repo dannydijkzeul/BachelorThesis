@@ -104,6 +104,42 @@ class Evaluator(object):
         to_log['ws_crosslingual_scores'] = ws_crosslingual_scores
         to_log.update({'src_tgt_' + k: v for k, v in src_tgt_ws_scores.items()})
 
+
+    def new_translation(self, to_log):
+        """
+        Evaluation on word translation.
+        """
+        # mapped word embeddings
+        src_emb = self.mapping(self.src_emb.weight).data
+        tgt_emb = self.tgt_emb.weight.data
+
+        src_words = [u'tann', 'fyri', 'og', 'at', 'ikki', u'ár', 'hvussu' , 'føroya']
+
+        self.get_nn(src_words, src_emb, self.src_dico.id2word, tgt_emb, self.tgt_dico.id2word, 10, to_log)
+
+    def get_nn(self, words, src_emb, src_id2word, tgt_emb, tgt_id2word, K, to_log):
+        total_scores = []
+        all_words = []
+        for word in words:
+            word_score_list = word + ":"
+            print("Nearest neighbors of \"%s\":" % word)
+            word2id = {v: k for k, v in src_id2word.items()}
+
+            word_emb = src_emb[word2id[word]].cpu().numpy()
+            scores = (tgt_emb.cpu().numpy() / np.linalg.norm(tgt_emb.cpu().numpy(), 2, 1)[:, None]).dot(word_emb / np.linalg.norm(word_emb))
+
+            k_best = scores.argsort()[-K:][::-1]
+            best_scores = []
+            for i, idx in enumerate(k_best):
+                # print('%.4f - %s' % (scores[idx], tgt_id2word[idx]))
+                word_score_list  += " " + str(scores[idx]) + " - " + tgt_id2word[idx]
+                best_scores.append(scores[idx])
+            all_words.append(word_score_list)
+            total_scores.append(np.mean(best_scores))
+        to_log["Words"] = all_words
+        to_log["Word_Scores"] = np.mean(total_scores)
+
+
     def word_translation(self, to_log):
         """
         Evaluation on word translation.
@@ -213,13 +249,16 @@ class Evaluator(object):
                 to_log['mean_nn'] = mean_cosine
             else:
                 to_log['mean_csls'] = mean_cosine
+
+
+
     def all_eval(self, to_log):
         """
         Run all evaluations.
         """
         # self.monolingual_wordsim(to_log)
         # self.crosslingual_wordsim(to_log)
-        # self.word_translation(to_log)
+        self.new_translation(to_log)
         # self.sent_translation(to_log)
         self.dist_mean_cosine(to_log)
 
@@ -234,12 +273,12 @@ class Evaluator(object):
         self.discriminator.eval()
 
         for i in range(0, self.src_emb.num_embeddings, bs):
-            emb = Variable(self.src_emb.weight[i:i + bs].data, volatile=True)
+            emb = Variable(self.src_emb.weight[i:i + bs].data, requires_grad=True)
             preds = self.discriminator(self.mapping(emb))
             src_preds.extend(preds.data.cpu().tolist())
 
         for i in range(0, self.tgt_emb.num_embeddings, bs):
-            emb = Variable(self.tgt_emb.weight[i:i + bs].data, volatile=True)
+            emb = Variable(self.tgt_emb.weight[i:i + bs].data, requires_grad=True)
             preds = self.discriminator(emb)
             tgt_preds.extend(preds.data.cpu().tolist())
 
