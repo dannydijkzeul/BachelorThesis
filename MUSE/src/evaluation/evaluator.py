@@ -113,7 +113,7 @@ class Evaluator(object):
         src_emb = self.mapping(self.src_emb.weight).data
         tgt_emb = self.tgt_emb.weight.data
 
-        src_words = [u'tann', 'fyri', 'og', 'at', 'ikki', u'ár', 'hvussu' , 'føroya']
+        src_words = [u'tann', 'fyri', 'og', 'at', 'ikki', 'hvussu']
 
         self.get_nn(src_words, src_emb, self.src_dico.id2word, tgt_emb, self.tgt_dico.id2word, 10, to_log)
 
@@ -131,7 +131,7 @@ class Evaluator(object):
             k_best = scores.argsort()[-K:][::-1]
             best_scores = []
             for i, idx in enumerate(k_best):
-                # print('%.4f - %s' % (scores[idx], tgt_id2word[idx]))
+                print('%.4f - %s' % (scores[idx], tgt_id2word[idx]))
                 word_score_list  += " " + str(scores[idx]) + " - " + tgt_id2word[idx]
                 best_scores.append(scores[idx])
             all_words.append(word_score_list)
@@ -258,7 +258,7 @@ class Evaluator(object):
         """
         # self.monolingual_wordsim(to_log)
         # self.crosslingual_wordsim(to_log)
-        self.new_translation(to_log)
+        #  self.new_translation(to_log)
         # self.sent_translation(to_log)
         self.dist_mean_cosine(to_log)
 

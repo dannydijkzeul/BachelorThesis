@@ -221,6 +221,7 @@ if params.n_refinement > 0:
 
         writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_nn', to_log['mean_nn'] , n_epoch + n_iter)
         writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_csls', to_log['mean_csls'] , n_epoch + n_iter)
+	evaluator.new_translation(to_log2)
 
         # JSON log / save best model / end of epoch
         logger.info("__log__:%s" % json.dumps(to_log))
