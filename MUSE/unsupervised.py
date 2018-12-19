@@ -97,135 +97,137 @@ assert params.export in ["", "txt", "pth"]
 logger = initialize_exp(params)
 src_emb, tgt_emb, mapping, discriminator = build_model(params, True)
 
-print params.src_dico.index(",")
 trainer = Trainer(src_emb, tgt_emb, mapping, discriminator, params)
 evaluator = Evaluator(trainer)
 
 writer = SummaryWriter()
 
+with open("wordresult.txt", "r") as w:
+    """
+    Learning loop for Adversarial Training
+    """
+    if params.adversarial:
+        logger.info('----> ADVERSARIAL TRAINING <----\n\n')
 
-"""
-Learning loop for Adversarial Training
-"""
-if params.adversarial:
-    logger.info('----> ADVERSARIAL TRAINING <----\n\n')
+        # training loop
+        for n_epoch in range(params.n_epochs):
 
-    # training loop
-    for n_epoch in range(params.n_epochs):
+            logger.info('Starting adversarial training epoch %i...' % n_epoch)
+            tic = time.time()
+            n_words_proc = 0
+            stats = {'DIS_COSTS': [], 'GEN_LOSS' : []}
 
-        logger.info('Starting adversarial training epoch %i...' % n_epoch)
-        tic = time.time()
-        n_words_proc = 0
-        stats = {'DIS_COSTS': [], 'GEN_LOSS' : []}
+            for n_iter in range(0, params.epoch_size, params.batch_size):
 
-        for n_iter in range(0, params.epoch_size, params.batch_size):
+                # discriminator training
+                for _ in range(params.dis_steps):
+                    trainer.dis_step(stats)
 
-            # discriminator training
-            for _ in range(params.dis_steps):
-                trainer.dis_step(stats)
+                # mapping training (discriminator fooling)
+                n_words_proc += trainer.mapping_step(stats)
 
-            # mapping training (discriminator fooling)
-            n_words_proc += trainer.mapping_step(stats)
+                if n_iter % 10000 == 0:
+                    to_log2 = OrderedDict({'n_epoch': n_epoch})
+                    w.write("Epoch :" + str(n_epoch) + ": " + str(n_words_proc) + "\n" )
+                    evaluator.eval_dis(to_log2)
+                    writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Source_Predict', to_log2['dis_src_pred'] , n_iter + (n_epoch*params.epoch_size))
+                    writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Target_Predict', to_log2['dis_tgt_pred'] , n_iter + (n_epoch*params.epoch_size))
+                    writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Source_Accuracy', to_log2['src_accu'] , n_iter + (n_epoch*params.epoch_size))
+                    writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Target_Accuracy', to_log2['tgt_accu'] , n_iter + (n_epoch*params.epoch_size))
+                    writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Global_Accuracy', to_log2['dis_accu'] , n_iter + (n_epoch*params.epoch_size))
+                    stats_str = [('DIS_COSTS', 'Discriminator loss')]
+                    stats_str2 = [('GEN_LOSS', 'Generator loss')]
+                    for k, _ in stats_str:
+                        if len(stats[k]) > 0:
+                            writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_loss', np.mean(stats[k]), n_iter + (n_epoch*params.epoch_size))
+                    for k, _ in stats_str2:
+                        if len(stats[k]) > 0:
+                            writer.add_scalar('Thesis_' + params.exp_id + '/Generator_loss', np.mean(stats[k])/params.dis_lambda, n_iter + (n_epoch*params.epoch_size))
+                    evaluator.new_translation(to_log2)
+                    writer.add_scalar('Thesis_' + params.exp_id + '/Mean_word_scores', to_log2['Word_Scores'] , n_iter + (n_epoch*params.epoch_size))
 
-            if n_iter % 10000 == 0:
-                to_log2 = OrderedDict({'n_epoch': n_epoch})
-                evaluator.eval_dis(to_log2)
-                writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Source_Predict', to_log2['dis_src_pred'] , n_iter + (n_epoch*params.epoch_size))
-                writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Target_Predict', to_log2['dis_tgt_pred'] , n_iter + (n_epoch*params.epoch_size))
-                writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Source_Accuracy', to_log2['src_accu'] , n_iter + (n_epoch*params.epoch_size))
-                writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Target_Accuracy', to_log2['tgt_accu'] , n_iter + (n_epoch*params.epoch_size))
-                writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Global_Accuracy', to_log2['dis_accu'] , n_iter + (n_epoch*params.epoch_size))
-                stats_str = [('DIS_COSTS', 'Discriminator loss')]
-                stats_str2 = [('GEN_LOSS', 'Generator loss')]
-                for k, _ in stats_str:
-                    if len(stats[k]) > 0:
-                        writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_loss', np.mean(stats[k]), n_iter + (n_epoch*params.epoch_size))
-                for k, _ in stats_str2:
-                    if len(stats[k]) > 0:
-                        writer.add_scalar('Thesis_' + params.exp_id + '/Generator_loss', np.mean(stats[k])/params.dis_lambda, n_iter + (n_epoch*params.epoch_size))
-                evaluator.new_translation(to_log2)
-                writer.add_scalar('Thesis_' + params.exp_id + '/Mean_word_scores', to_log2['Word_Scores'] , n_iter + (n_epoch*params.epoch_size))
-                for i in to_log2["Words"]:
-                    writer.add_text('Thesis_' + params.exp_id + '/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
+                    for i in to_log2["Words"]:
+                        w.write(i + "\n")
+                        writer.add_text('Thesis_' + params.exp_id + '/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
 
-            # log stats
-            if n_iter % 500 == 0:
-                stats_str = [('DIS_COSTS', 'Discriminator loss')]
-                stats_str2 = [('GEN_LOSS', 'Generator loss')]
+                # log stats
+                if n_iter % 500 == 0:
+                    stats_str = [('DIS_COSTS', 'Discriminator loss')]
+                    stats_str2 = [('GEN_LOSS', 'Generator loss')]
 
-                # add togheter
+                    # add togheter
 
-                stats_log = ['%s: %.4f' % (v, np.mean(stats[k]))
-                             for k, v in stats_str if len(stats[k]) > 0]
+                    stats_log = ['%s: %.4f' % (v, np.mean(stats[k]))
+                                 for k, v in stats_str if len(stats[k]) > 0]
 
-                stats_log.append('%i samples/s' % int(n_words_proc / (time.time() - tic)))
-                logger.info(('%06i - ' % n_iter) + ' - '.join(stats_log))
+                    stats_log.append('%i samples/s' % int(n_words_proc / (time.time() - tic)))
+                    logger.info(('%06i - ' % n_iter) + ' - '.join(stats_log))
 
-                # reset
-                tic = time.time()
-                n_words_proc = 0
-                for k, _ in stats_str:
-                    del stats[k][:]
+                    # reset
+                    tic = time.time()
+                    n_words_proc = 0
+                    for k, _ in stats_str:
+                        del stats[k][:]
 
-                for k, _ in stats_str2:
-                    del stats[k][:]
-
-
-
-
-
-
-        # embeddings / discriminator evaluation
-        to_log = OrderedDict({'n_epoch': n_epoch})
-        evaluator.all_eval(to_log)
-        evaluator.eval_dis(to_log)
-
-        writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_nn', to_log['mean_nn'] , n_epoch)
-        writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_csls', to_log['mean_csls'] , n_epoch)
+                    for k, _ in stats_str2:
+                        del stats[k][:]
 
 
-        # JSON log / save best model / end of epoch
-        logger.info("__log__:%s" % json.dumps(to_log))
-        trainer.save_best(to_log, VALIDATION_METRIC)
-        logger.info('End of epoch %i.\n\n' % n_epoch)
-
-        # update the learning rate (stop if too small)
-        trainer.update_lr(to_log, VALIDATION_METRIC)
-        if trainer.map_optimizer.param_groups[0]['lr'] < params.min_lr:
-            logger.info('Learning rate < 1e-6. BREAK.')
-            break
 
 
-"""
-Learning loop for Procrustes Iterative Refinement
-"""
-if params.n_refinement > 0:
-    # Get the best mapping according to VALIDATION_METRIC
-    logger.info('----> ITERATIVE PROCRUSTES REFINEMENT <----\n\n')
-    trainer.reload_best()
 
-    # training loop
-    for n_iter in range(params.n_refinement):
 
-        logger.info('Starting refinement iteration %i...' % n_iter)
+            # embeddings / discriminator evaluation
+            to_log = OrderedDict({'n_epoch': n_epoch})
+            evaluator.all_eval(to_log)
+            evaluator.eval_dis(to_log)
 
-        # build a dictionary from aligned embeddings
-        trainer.build_dictionary()
+            writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_nn', to_log['mean_nn'] , n_epoch)
+            writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_csls', to_log['mean_csls'] , n_epoch)
 
-        # apply the Procrustes solution
-        trainer.procrustes()
 
-        # embeddings evaluation
-        to_log = OrderedDict({'n_iter': n_iter})
-       	evaluator.all_eval(to_log)
+            # JSON log / save best model / end of epoch
+            logger.info("__log__:%s" % json.dumps(to_log))
+            trainer.save_best(to_log, VALIDATION_METRIC)
+            logger.info('End of epoch %i.\n\n' % n_epoch)
 
-        writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_nn', to_log['mean_nn'] , n_epoch + n_iter)
-        writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_csls', to_log['mean_csls'] , n_epoch + n_iter)
+            # update the learning rate (stop if too small)
+            trainer.update_lr(to_log, VALIDATION_METRIC)
+            if trainer.map_optimizer.param_groups[0]['lr'] < params.min_lr:
+                logger.info('Learning rate < 1e-6. BREAK.')
+                break
 
-        # JSON log / save best model / end of epoch
-        logger.info("__log__:%s" % json.dumps(to_log))
-        trainer.save_best(to_log, VALIDATION_METRIC)
-        logger.info('End of refinement iteration %i.\n\n' % n_iter)
+
+    """
+    Learning loop for Procrustes Iterative Refinement
+    """
+    if params.n_refinement > 0:
+        # Get the best mapping according to VALIDATION_METRIC
+        logger.info('----> ITERATIVE PROCRUSTES REFINEMENT <----\n\n')
+        trainer.reload_best()
+
+        # training loop
+        for n_iter in range(params.n_refinement):
+
+            logger.info('Starting refinement iteration %i...' % n_iter)
+
+            # build a dictionary from aligned embeddings
+            trainer.build_dictionary()
+
+            # apply the Procrustes solution
+            trainer.procrustes()
+
+            # embeddings evaluation
+            to_log = OrderedDict({'n_iter': n_iter})
+            evaluator.all_eval(to_log)
+
+            writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_nn', to_log['mean_nn'] , n_epoch + n_iter)
+            writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_csls', to_log['mean_csls'] , n_epoch + n_iter)
+
+            # JSON log / save best model / end of epoch
+            logger.info("__log__:%s" % json.dumps(to_log))
+            trainer.save_best(to_log, VALIDATION_METRIC)
+            logger.info('End of refinement iteration %i.\n\n' % n_iter)
 
 
 # export embeddings
