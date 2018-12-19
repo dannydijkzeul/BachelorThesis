@@ -102,7 +102,7 @@ evaluator = Evaluator(trainer)
 
 writer = SummaryWriter()
 
-with open("wordresult.txt", "w") as w:
+with open("data/results/wordresult_" + params.exp_id + ".txt", "r") as w:
     """
     Learning loop for Adversarial Training
     """
@@ -128,7 +128,7 @@ with open("wordresult.txt", "w") as w:
 
                 if n_iter % 10000 == 0:
                     to_log2 = OrderedDict({'n_epoch': n_epoch})
-                    w.write("Epoch :" + str(n_epoch) + ": " + str(n_words_proc) + "\n" )
+                    w.write("Epoch :" + str(n_epoch) + ": " + str(n_iter) + "\n\n" )
                     evaluator.eval_dis(to_log2)
                     writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Source_Predict', to_log2['dis_src_pred'] , n_iter + (n_epoch*params.epoch_size))
                     writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Target_Predict', to_log2['dis_tgt_pred'] , n_iter + (n_epoch*params.epoch_size))
@@ -147,7 +147,7 @@ with open("wordresult.txt", "w") as w:
                     writer.add_scalar('Thesis_' + params.exp_id + '/Mean_word_scores', to_log2['Word_Scores'] , n_iter + (n_epoch*params.epoch_size))
 
                     for i in to_log2["Words"]:
-                        w.write(i.encode("utf8")  + "\n")
+                        w.write(i.encode("utf8") + "\n\n")
                         writer.add_text('Thesis_' + params.exp_id + '/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
 
                 # log stats
@@ -223,7 +223,12 @@ with open("wordresult.txt", "w") as w:
 
             writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_nn', to_log['mean_nn'] , n_epoch + n_iter)
             writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_csls', to_log['mean_csls'] , n_epoch + n_iter)
-	    evaluator.new_translation(to_log2)
+
+            evaluator.new_translation(to_log)
+            for i in to_log2["Words"]:
+                w.write(i.encode("utf8")  + "\n")
+                writer.add_text('Thesis_' + params.exp_id + '/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
+
 
             # JSON log / save best model / end of epoch
             logger.info("__log__:%s" % json.dumps(to_log))
