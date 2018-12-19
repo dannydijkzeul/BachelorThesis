@@ -102,7 +102,7 @@ evaluator = Evaluator(trainer)
 
 writer = SummaryWriter()
 
-with open("wordresult.txt", "r") as w:
+with open("wordresult.txt", "w") as w:
     """
     Learning loop for Adversarial Training
     """
@@ -147,7 +147,7 @@ with open("wordresult.txt", "r") as w:
                     writer.add_scalar('Thesis_' + params.exp_id + '/Mean_word_scores', to_log2['Word_Scores'] , n_iter + (n_epoch*params.epoch_size))
 
                     for i in to_log2["Words"]:
-                        w.write(i + "\n")
+                        w.write(i.encode("utf8")  + "\n")
                         writer.add_text('Thesis_' + params.exp_id + '/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
 
                 # log stats
@@ -221,9 +221,9 @@ with open("wordresult.txt", "r") as w:
             to_log = OrderedDict({'n_iter': n_iter})
             evaluator.all_eval(to_log)
 
-        writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_nn', to_log['mean_nn'] , n_epoch + n_iter)
-        writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_csls', to_log['mean_csls'] , n_epoch + n_iter)
-	evaluator.new_translation(to_log2)
+            writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_nn', to_log['mean_nn'] , n_epoch + n_iter)
+            writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_csls', to_log['mean_csls'] , n_epoch + n_iter)
+	    evaluator.new_translation(to_log2)
 
             # JSON log / save best model / end of epoch
             logger.info("__log__:%s" % json.dumps(to_log))
