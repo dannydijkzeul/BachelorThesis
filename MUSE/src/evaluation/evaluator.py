@@ -113,7 +113,7 @@ class Evaluator(object):
         src_emb = self.mapping(self.src_emb.weight).data
         tgt_emb = self.tgt_emb.weight.data
 
-        src_words = [u'tann', 'fyri', 'og', 'at', 'ikki', u'ár', 'hvussu' , 'føroya']
+        src_words = [u'die', 'und', 'at', 'nicht', u'ja', 'wie']
 
         self.get_nn(src_words, src_emb, self.src_dico.id2word, tgt_emb, self.tgt_dico.id2word, 10, to_log)
 
@@ -122,7 +122,7 @@ class Evaluator(object):
         all_words = []
         for word in words:
             word_score_list = word + ":"
-            print("Nearest neighbors of \"%s\":" % word)
+            # print("Nearest neighbors of \"%s\":" % word)
             word2id = {v: k for k, v in src_id2word.items()}
 
             word_emb = src_emb[word2id[word]].cpu().numpy()
@@ -258,7 +258,7 @@ class Evaluator(object):
         """
         # self.monolingual_wordsim(to_log)
         # self.crosslingual_wordsim(to_log)
-        self.new_translation(to_log)
+        # self.new_translation(to_log)
         # self.sent_translation(to_log)
         self.dist_mean_cosine(to_log)
 

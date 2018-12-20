@@ -102,7 +102,7 @@ evaluator = Evaluator(trainer)
 
 writer = SummaryWriter()
 
-with open("data/results/wordresult_" + params.exp_id + ".txt", "r") as w:
+with open("data/results/wordresult_" + params.exp_id + ".txt", "wr") as w:
     """
     Learning loop for Adversarial Training
     """
@@ -147,7 +147,8 @@ with open("data/results/wordresult_" + params.exp_id + ".txt", "r") as w:
                     writer.add_scalar('Thesis_' + params.exp_id + '/Mean_word_scores', to_log2['Word_Scores'] , n_iter + (n_epoch*params.epoch_size))
 
                     for i in to_log2["Words"]:
-                        w.write(i.encode("utf8") + "\n\n")
+			print i
+			w.write(i.encode("utf8") + "\n\n")
                         writer.add_text('Thesis_' + params.exp_id + '/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
 
                 # log stats
