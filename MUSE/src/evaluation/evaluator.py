@@ -113,7 +113,9 @@ class Evaluator(object):
         src_emb = self.mapping(self.src_emb.weight).data
         tgt_emb = self.tgt_emb.weight.data
 
-        src_words = [u'tann', 'fyri', 'og', 'at', 'ikki', u'ár', 'hvussu' , 'føroya']
+
+        # src_words = [u'og', 'ikki', 'ja', 'at', 'hvussu', 'morgin' , 'gud', 'sjónvarp']
+        src_words = ['und', 'nicht', 'ja', 'zu', 'wie', 'morgen', 'gott', 'fernsehen']
 
         self.get_nn(src_words, src_emb, self.src_dico.id2word, tgt_emb, self.tgt_dico.id2word, 10, to_log)
 
