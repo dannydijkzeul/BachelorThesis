@@ -18,6 +18,10 @@ from ..dico_builder import get_candidates, build_dictionary
 from src.utils import get_idf
 
 
+
+
+
+
 logger = getLogger()
 
 
@@ -113,7 +117,13 @@ class Evaluator(object):
         src_emb = self.mapping(self.src_emb.weight).data
         tgt_emb = self.tgt_emb.weight.data
 
-        src_words = [u'die', 'und', 'at', 'nicht', u'ja', 'wie']
+
+
+
+
+        src_words = [u'og', 'ikki', 'ja', 'at', 'hvussu', 'morgin' , 'gud', u'eta']
+        # src_words = ['und', 'nicht', 'ja', 'zu', 'wie', 'morgen', 'gott', 'essen']
+
 
         self.get_nn(src_words, src_emb, self.src_dico.id2word, tgt_emb, self.tgt_dico.id2word, 10, to_log)
 

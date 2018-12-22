@@ -130,26 +130,26 @@ with open("data/results/wordresult_" + params.exp_id + ".txt", "wr") as w:
                     to_log2 = OrderedDict({'n_epoch': n_epoch})
                     w.write("Epoch :" + str(n_epoch) + ": " + str(n_iter) + "\n\n" )
                     evaluator.eval_dis(to_log2)
-                    writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Source_Predict', to_log2['dis_src_pred'] , n_iter + (n_epoch*params.epoch_size))
-                    writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Target_Predict', to_log2['dis_tgt_pred'] , n_iter + (n_epoch*params.epoch_size))
-                    writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Source_Accuracy', to_log2['src_accu'] , n_iter + (n_epoch*params.epoch_size))
-                    writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Target_Accuracy', to_log2['tgt_accu'] , n_iter + (n_epoch*params.epoch_size))
-                    writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_Global_Accuracy', to_log2['dis_accu'] , n_iter + (n_epoch*params.epoch_size))
+                    writer.add_scalar('Thesis/Discriminator_Source_Predict', to_log2['dis_src_pred'] , n_iter + (n_epoch*params.epoch_size))
+                    writer.add_scalar('Thesis/Discriminator_Target_Predict', to_log2['dis_tgt_pred'] , n_iter + (n_epoch*params.epoch_size))
+                    writer.add_scalar('Thesis/Discriminator_Source_Accuracy', to_log2['src_accu'] , n_iter + (n_epoch*params.epoch_size))
+                    writer.add_scalar('Thesis/Discriminator_Target_Accuracy', to_log2['tgt_accu'] , n_iter + (n_epoch*params.epoch_size))
+                    writer.add_scalar('Thesis/Discriminator_Global_Accuracy', to_log2['dis_accu'] , n_iter + (n_epoch*params.epoch_size))
                     stats_str = [('DIS_COSTS', 'Discriminator loss')]
                     stats_str2 = [('GEN_LOSS', 'Generator loss')]
                     for k, _ in stats_str:
                         if len(stats[k]) > 0:
-                            writer.add_scalar('Thesis_' + params.exp_id + '/Discriminator_loss', np.mean(stats[k]), n_iter + (n_epoch*params.epoch_size))
+                            writer.add_scalar('Thesis/Discriminator_loss', np.mean(stats[k]), n_iter + (n_epoch*params.epoch_size))
                     for k, _ in stats_str2:
                         if len(stats[k]) > 0:
-                            writer.add_scalar('Thesis_' + params.exp_id + '/Generator_loss', np.mean(stats[k])/params.dis_lambda, n_iter + (n_epoch*params.epoch_size))
+                            writer.add_scalar('Thesis/Generator_loss', np.mean(stats[k])/params.dis_lambda, n_iter + (n_epoch*params.epoch_size))
                     evaluator.new_translation(to_log2)
-                    writer.add_scalar('Thesis_' + params.exp_id + '/Mean_word_scores', to_log2['Word_Scores'] , n_iter + (n_epoch*params.epoch_size))
+                    writer.add_scalar('Thesis/Mean_word_scores', to_log2['Word_Scores'] , n_iter + (n_epoch*params.epoch_size))
 
                     for i in to_log2["Words"]:
-			print i
-			w.write(i.encode("utf8") + "\n\n")
-                        writer.add_text('Thesis_' + params.exp_id + '/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
+                        w.write(i.encode("utf8") + "\n\n")
+                        writer.add_text('Thesis/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
+
 
                 # log stats
                 if n_iter % 500 == 0:
@@ -183,8 +183,8 @@ with open("data/results/wordresult_" + params.exp_id + ".txt", "wr") as w:
             evaluator.all_eval(to_log)
             evaluator.eval_dis(to_log)
 
-            writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_nn', to_log['mean_nn'] , n_epoch)
-            writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_csls', to_log['mean_csls'] , n_epoch)
+            writer.add_scalar('Thesis/mean_cosine_nn', to_log['mean_nn'] , n_epoch)
+            writer.add_scalar('Thesis/mean_cosine_csls', to_log['mean_csls'] , n_epoch)
 
 
             # JSON log / save best model / end of epoch
@@ -211,7 +211,7 @@ with open("data/results/wordresult_" + params.exp_id + ".txt", "wr") as w:
         for n_iter in range(params.n_refinement):
 
             logger.info('Starting refinement iteration %i...' % n_iter)
-
+	    w.write("Refinment :" + str(n_iter) + "\n\n" )
             # build a dictionary from aligned embeddings
             trainer.build_dictionary()
 
@@ -222,13 +222,13 @@ with open("data/results/wordresult_" + params.exp_id + ".txt", "wr") as w:
             to_log = OrderedDict({'n_iter': n_iter})
             evaluator.all_eval(to_log)
 
-            writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_nn', to_log['mean_nn'] , n_epoch + n_iter)
-            writer.add_scalar('Thesis_' + params.exp_id + '/mean_cosine_csls', to_log['mean_csls'] , n_epoch + n_iter)
+            writer.add_scalar('Thesis/mean_cosine_nn', to_log['mean_nn'] , n_epoch + n_iter)
+            writer.add_scalar('Thesis/mean_cosine_csls', to_log['mean_csls'] , n_epoch + n_iter)
 
             evaluator.new_translation(to_log)
             for i in to_log2["Words"]:
                 w.write(i.encode("utf8")  + "\n")
-                writer.add_text('Thesis_' + params.exp_id + '/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
+                writer.add_text('Thesis/Mean_word_results', i, n_iter + (n_epoch*params.epoch_size))
 
 
             # JSON log / save best model / end of epoch
