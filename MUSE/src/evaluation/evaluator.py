@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # Copyright (c) 2017-present, Facebook, Inc.
 # All rights reserved.
 #
@@ -109,6 +112,14 @@ class Evaluator(object):
         to_log.update({'src_tgt_' + k: v for k, v in src_tgt_ws_scores.items()})
 
 
+    def validate_words(self,to_log, src_words):
+        # mapped word embeddings
+        src_emb = self.mapping(self.src_emb.weight).data
+        tgt_emb = self.tgt_emb.weight.data
+
+        self.get_nn(src_words, src_emb, self.src_dico.id2word, tgt_emb, self.tgt_dico.id2word, 10, to_log)
+
+
     def new_translation(self, to_log):
         """
         Evaluation on word translation.
@@ -130,24 +141,32 @@ class Evaluator(object):
     def get_nn(self, words, src_emb, src_id2word, tgt_emb, tgt_id2word, K, to_log):
         total_scores = []
         all_words = []
+        word_dict = {}
+
+
+
         for word in words:
+            word_dict[word] = []
             word_score_list = word + ":"
             # print("Nearest neighbors of \"%s\":" % word)
             word2id = {v: k for k, v in src_id2word.items()}
+            if word.decode('utf8') in word2id.keys():
+                print word.decode('utf8')
+                word_emb = src_emb[word2id[word.decode("utf8")]].cpu().numpy()
+                scores = (tgt_emb.cpu().numpy() / np.linalg.norm(tgt_emb.cpu().numpy(), 2, 1)[:, None]).dot(word_emb / np.linalg.norm(word_emb))
 
-            word_emb = src_emb[word2id[word]].cpu().numpy()
-            scores = (tgt_emb.cpu().numpy() / np.linalg.norm(tgt_emb.cpu().numpy(), 2, 1)[:, None]).dot(word_emb / np.linalg.norm(word_emb))
-
-            k_best = scores.argsort()[-K:][::-1]
-            best_scores = []
-            for i, idx in enumerate(k_best):
-                # print('%.4f - %s' % (scores[idx], tgt_id2word[idx]))
-                word_score_list  += "\n " + str(scores[idx]) + " - " + tgt_id2word[idx]
-                best_scores.append(scores[idx])
-            all_words.append(word_score_list)
-            total_scores.append(np.mean(best_scores))
+                k_best = scores.argsort()[-K:][::-1]
+                best_scores = []
+                for i, idx in enumerate(k_best):
+                    # print('%.4f - %s' % (scores[idx], tgt_id2word[idx]))
+                    # word_score_list  += "\n " + str(scores[idx]) + " - " + tgt_id2word[idx].decode("utf8")
+                    word_dict[word].append(tgt_id2word[idx])
+                    best_scores.append(scores[idx])
+                all_words.append(word_score_list)
+                total_scores.append(np.mean(best_scores))
         to_log["Words"] = all_words
         to_log["Word_Scores"] = np.mean(total_scores)
+        to_log["Word_dict"] = word_dict
 
 
     def word_translation(self, to_log):
