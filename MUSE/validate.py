@@ -77,69 +77,79 @@ parser.add_argument("--src_emb", type=str, default="", help="Reload source embed
 parser.add_argument("--tgt_emb", type=str, default="", help="Reload target embeddings")
 parser.add_argument("--normalize_embeddings", type=str, default="", help="Normalize embeddings before training")
 
-parser.add_argument("--validate_path", type=str, default="Validation/complete-fa-en.csv", help="Validation words")
+parser.add_argument("--validate_path", type=str, default="", help="Validation words")
 
 
 # parse parameters
 params = parser.parse_args()
-
-
-en_words = []
-fa_words = []
-
-with open(params.validate_path, 'r') as r:
-    words = r.readline()
-    translateDict = {}
-    while words:
-        splitWord = words.split(",")
-
-        translateDict[splitWord[0]] = splitWord[1].rstrip()
-        en_words.append(splitWord[1].rstrip())
-        fa_words.append(splitWord[0].rstrip())
-        words = r.readline()
-
-
 
 # build model / trainer / evaluator
 logger = initialize_exp(params)
 src_emb, tgt_emb, mapping, discriminator = build_model(params, True)
 
 
-
 trainer = Trainer(src_emb, tgt_emb, mapping, discriminator, params)
 trainer.reload_best()
 evaluator = Evaluator(trainer)
 
-to_log2 = OrderedDict({'n_epoch': 0})
-evaluator.validate_words(to_log2, fa_words)
+
+if params.validate_path == "":
+
+    while True:
+        word = raw_input("Query word: ")
+        print word
+        to_log2 = OrderedDict({'n_epoch': 0})
+        evaluator.validate_words(to_log2, [word])
+        print to_log2["Word_dict"].keys()
+        for wordKey in to_log2["Word_dict"].keys():
+            print to_log2["Word_dict"][wordKey]
+else:
+
+    en_words = []
+    fa_words = []
+
+    with open(params.validate_path, 'r') as r:
+        words = r.readline()
+        translateDict = {}
+        while words:
+            splitWord = words.split(",")
+
+            translateDict[splitWord[0]] = splitWord[1].rstrip()
+            en_words.append(splitWord[1].rstrip())
+            fa_words.append(splitWord[0].rstrip())
+            words = r.readline()
 
 
-top1 = 0
-top5 = 0
-top10 = 0
-
-for translatedWord in to_log2["Word_dict"].keys():
-    print translatedWord + " " + translateDict[translatedWord]
-    translationEN = translateDict[translatedWord]
-    transaltions = to_log2["Word_dict"][translatedWord][0:10]
-    print transaltions
-    try:
-        indexTranslation = transaltions.index(translationEN)
-
-        if indexTranslation == 0:
-            top1 += 1
-
-        if indexTranslation < 5:
-            top5 += 1
-
-        if indexTranslation < 10:
-            top10 += 1
-    except ValueError as e:
-        pass
+    to_log2 = OrderedDict({'n_epoch': 0})
+    evaluator.validate_words(to_log2, fa_words)
 
 
+    top1 = 0
+    top5 = 0
+    top10 = 0
+
+    for translatedWord in to_log2["Word_dict"].keys():
+        print translatedWord + " " + translateDict[translatedWord]
+        translationEN = translateDict[translatedWord]
+        transaltions = to_log2["Word_dict"][translatedWord][0:10]
+        print transaltions
+        try:
+            indexTranslation = transaltions.index(translationEN)
+
+            if indexTranslation == 0:
+                top1 += 1
+
+            if indexTranslation < 5:
+                top5 += 1
+
+            if indexTranslation < 10:
+                top10 += 1
+        except ValueError as e:
+            pass
 
 
-print top1/float(len(to_log2["Word_dict"].keys()))
-print top5/float(len(to_log2["Word_dict"].keys()))
-print top10/float(len(to_log2["Word_dict"].keys()))
+
+
+    print top1/float(len(to_log2["Word_dict"].keys()))
+    print top5/float(len(to_log2["Word_dict"].keys()))
+    print top10/float(len(to_log2["Word_dict"].keys()))
